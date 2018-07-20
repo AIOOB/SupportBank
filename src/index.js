@@ -21,7 +21,7 @@ const logger = log4js.getLogger('index.js');
 logger.info('Logging Initialised');
 
 if (process.argv.length > 2) {
-    console.log('Command line arguments are not supported.');
+    console.warn('Command line arguments are not supported.');
 }
 
 const accounts = new Map();

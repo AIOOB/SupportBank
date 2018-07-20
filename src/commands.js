@@ -4,29 +4,27 @@ const logger = log4js.getLogger('commands.js');
 const { parseFile, writeFile } = require ('./fileio.js');
 
 function processCommand(input, accounts) {
-    if (input == 'Quit') {
-        logger.info('Quitting');
-        return true;
-    } else if (input.startsWith('Import ')) {
-        const fileName = input.slice(7);
-        logger.debug(`Importing file: ${fileName}`);
-        parseFile(fileName, accounts);
-    } else if (input.startsWith('Export ')) {
-        const fileName = input.slice(7);
-        logger.debug(`Exporting accounts to ${fileName}`);
-        writeFile(fileName, accounts);
-    } else if (input.startsWith('List ')) {
-        const accountName = input.slice(5);
-        if (accountName == 'All') {
-            printAllAccounts(accounts);
-        } else if (accounts.has(accountName)) {
-            printAccountInfo(accounts.get(accountName));
-        } else {
-            logger.debug(`List command received for invalid account: ${accountName}`);
-            console.log('The specified account doesn\'t exist');
-        }
+    const [_, command, args] = input.match(/([^ ]*)(?: (.*))?/);
+    let fun = {
+        'Quit': () => {
+            logger.info('Quitting');
+            return true;
+        },
+        'Import': parseFile,
+        'Export': writeFile,
+        'List': listAccount,
+    }[command];
+    return fun ? fun(args, accounts) : printHelp(input);
+}
+
+function listAccount(accountName, accounts) {
+    if (accountName == 'All') {
+        printAllAccounts(accounts);
+    } else if (accounts.has(accountName)) {
+        printAccountInfo(accounts.get(accountName));
     } else {
-        printHelp(input);
+        logger.debug(`List command received for invalid account: ${accountName}`);
+        console.log('The specified account doesn\'t exist');
     }
 }
 

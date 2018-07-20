@@ -6,11 +6,8 @@ class Account {
 
     get balance() {
         return this.transactions.reduce((acc, transaction) => {
-            if (transaction.dstAccount === this) {
-                return acc + transaction.amount;
-            } else {
-                return acc - transaction.amount;
-            }
+            const isCredit = transaction.dstAccount === this;
+            return acc  + (isCredit ? +1 : -1) * transaction.amount;
         }, 0);
     }
 

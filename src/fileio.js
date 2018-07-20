@@ -9,6 +9,7 @@ const Account = require('./data.js');
 const logger = log4js.getLogger('parser.js');
 
 function parseFile(fileName, accounts) {
+    logger.debug(`Importing file: ${fileName}`);
     let file;
     try {
         file = fs.readFileSync(fileName, {encoding: 'utf8'});
@@ -36,15 +37,13 @@ function parseFile(fileName, accounts) {
     }
     logger.info(`Importing file ${fileName} detected type ${extension}.`);
     const records = parsers[extension](file);
-
-    for (let i = 0; i < records.length; i++) {
-        const record = records[i];
+    records.forEach(record => {
         logger.debug(`Importing transaction: ${JSON.stringify(record)}`);
         const date = record.date;
         if (!date.isValid()) {
             logger.warn(`Invalid date in ${fileName} got ${JSON.stringify(record)}`);
             console.log(`Invalid record in ${fileName} due to bad date, skipping.`);
-            continue;
+            return;
         }
         const srcAccount = getOrCreateAccount(accounts, record.from);
         const dstAccount = getOrCreateAccount(accounts, record.to);
@@ -52,10 +51,10 @@ function parseFile(fileName, accounts) {
         if (!amount) {
             logger.warn(`Invalid amount in ${fileName} got ${JSON.stringify(record)}`);
             console.log(`Invalid record in ${fileName} due to bad amount, skipping.`);
-            continue;
+            return;
         }
         srcAccount.pay(dstAccount, date, record.reason, amount);
-    }
+    });
 }
 
 function getOrCreateAccount(accounts, name) {
@@ -86,7 +85,7 @@ function parseJSON(input) {
 }
 
 function parseXML(input) {
-    let parsed = xmlToJs(input, {compact: true});
+    const parsed = xmlToJs(input, {compact: true});
     return parsed.TransactionList.SupportTransaction.map(record => ({
         date: moment({year: 1900, month: 0, day: 1}).add(parseInt(record._attributes.Date), 'd'),
         from: record.Parties.From._text,
